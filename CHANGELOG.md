@@ -17,10 +17,11 @@ First working scaffold.
 - Curated indicators from the BC Wildfire webinar paper, each with its source and whether it was re-checked.
 
 - CARTO basemap key support (`WEPDASH_CARTO_KEY`), so the map tiles are not watermarked in production.
-- `pipeline.fetch_fire_centre_codes`: one-off fetcher for `data/curated/fire_centre_codes.csv`
-  (BC fire-centre code -> name), so the dashboard shows real fire-centre names.
+- `data/curated/fire_centre_codes.csv` populated (BC fire-centre code -> name), so the dashboard
+  shows real fire-centre names instead of "Fire centre <code>". There is no reliable API that maps
+  these codes to names (see `docs/sources.md`), so the six rows were hand-verified by cross-checking
+  each code's live fire locations against BC Wildfire Service's published fire-centre boundaries.
+  `pipeline.verify_fire_centre_codes` re-checks this against each new snapshot.
 
 The live endpoints have been confirmed working against the real government servers (daily refresh
-runs green in GitHub Actions). Remaining known gap: `data/curated/fire_centre_codes.csv` is
-populated by running `python -m pipeline.fetch_fire_centre_codes` once and committing the result;
-until that has been run, fire centres show as "Fire centre <code>".
+runs green in GitHub Actions).

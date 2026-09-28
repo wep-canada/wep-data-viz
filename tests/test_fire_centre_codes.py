@@ -1,48 +1,72 @@
-"""fetch_fire_centre_codes: parsing/validation logic, without touching the real ArcGIS server."""
+"""verify_fire_centre_codes: centroid computation and the unmatched-code check."""
 
-import pytest
+import pandas as pd
 
-from pipeline import fetch_fire_centre_codes as fcc
-
-
-def fake_get(response):
-    def get(url, params=None):
-        return response
-    return get
+from pipeline import verify_fire_centre_codes as vfc
 
 
-def test_fetch_codes_parses_attributes():
-    response = {"features": [
-        {"attributes": {"MOF_FIRE_CENTRE_ID": 1, "MOF_FIRE_CENTRE_NAME": "Cariboo Fire Centre"}},
-        {"attributes": {"MOF_FIRE_CENTRE_ID": 2, "MOF_FIRE_CENTRE_NAME": "Coastal Fire Centre"}},
+def feature(centre, lon, lat, desc=""):
+    return {"type": "Feature", "geometry": {"type": "Point", "coordinates": [lon, lat]},
+            "properties": {"FIRE_CENTRE": centre, "GEOGRAPHIC_DESCRIPTION": desc}}
+
+
+def test_centre_centroids_averages_per_code():
+    fc = {"type": "FeatureCollection", "features": [
+        feature(5, -120.0, 50.0, "Stump Lake"),
+        feature(5, -120.2, 50.4, "Duck Range"),
+        feature(6, -117.45, 49.93, "St. Mary River"),
     ]}
-    assert fcc.fetch_codes(get=fake_get(response)) == {
-        "1": "Cariboo Fire Centre",
-        "2": "Coastal Fire Centre",
-    }
+    out = vfc.centre_centroids(fc).set_index("code")
+    assert out.loc["5", "fires"] == 2
+    assert out.loc["5", "centroid_lon"] == -120.1
+    assert out.loc["5", "centroid_lat"] == 50.2
+    assert "Stump Lake" in out.loc["5", "examples"]
+    assert out.loc["6", "fires"] == 1
 
 
-def test_fetch_codes_skips_incomplete_rows():
-    response = {"features": [
-        {"attributes": {"MOF_FIRE_CENTRE_ID": 1, "MOF_FIRE_CENTRE_NAME": "Cariboo Fire Centre"}},
-        {"attributes": {"MOF_FIRE_CENTRE_ID": None, "MOF_FIRE_CENTRE_NAME": "Nameless"}},
-        {"attributes": {"MOF_FIRE_CENTRE_ID": 3, "MOF_FIRE_CENTRE_NAME": ""}},
-    ]}
-    assert fcc.fetch_codes(get=fake_get(response)) == {"1": "Cariboo Fire Centre"}
+def test_centre_centroids_handles_empty_collection():
+    out = vfc.centre_centroids({"type": "FeatureCollection", "features": []})
+    assert out.empty
 
 
-def test_fetch_codes_raises_on_unexpected_shape():
-    with pytest.raises(RuntimeError):
-        fcc.fetch_codes(get=fake_get({"error": "boom"}))
+def test_main_flags_codes_missing_from_curated_csv(tmp_path, monkeypatch, capsys):
+    live_dir = tmp_path / "live"
+    live_dir.mkdir()
+    curated_dir = tmp_path / "curated"
+    curated_dir.mkdir()
+    (curated_dir / "fire_centre_codes.csv").write_text("code,name\n5,Kamloops Fire Centre\n",
+                                                        encoding="utf-8")
+    monkeypatch.setattr(vfc.config, "LIVE_DIR", live_dir)
+    monkeypatch.setattr(vfc.config, "CURATED_DIR", curated_dir)
+
+    from core.io import write_json
+    write_json(live_dir / "bc_fire_points.geojson", {"type": "FeatureCollection", "features": [
+        feature(5, -120.0, 50.0, "Stump Lake"),
+        feature(9, -114.0, 49.0, "Unknown zone"),
+    ]})
+
+    assert vfc.main([]) == 1
+    assert "<not in fire_centre_codes.csv>" in capsys.readouterr().out
 
 
-def test_fetch_codes_raises_when_layer_has_no_usable_rows():
-    with pytest.raises(RuntimeError):
-        fcc.fetch_codes(get=fake_get({"features": []}))
+def test_main_passes_when_every_code_is_curated(tmp_path, monkeypatch):
+    live_dir = tmp_path / "live"
+    live_dir.mkdir()
+    curated_dir = tmp_path / "curated"
+    curated_dir.mkdir()
+    (curated_dir / "fire_centre_codes.csv").write_text("code,name\n5,Kamloops Fire Centre\n",
+                                                        encoding="utf-8")
+    monkeypatch.setattr(vfc.config, "LIVE_DIR", live_dir)
+    monkeypatch.setattr(vfc.config, "CURATED_DIR", curated_dir)
+
+    from core.io import write_json
+    write_json(live_dir / "bc_fire_points.geojson", {"type": "FeatureCollection", "features": [
+        feature(5, -120.0, 50.0, "Stump Lake"),
+    ]})
+
+    assert vfc.main([]) == 0
 
 
-def test_write_csv_sorts_numerically(tmp_path, monkeypatch):
-    monkeypatch.setattr(fcc.config, "CURATED_DIR", tmp_path)
-    fcc.write_csv({"10": "Ten", "2": "Two", "1": "One"})
-    text = (tmp_path / "fire_centre_codes.csv").read_text(encoding="utf-8")
-    assert text.splitlines() == ["code,name", "1,One", "2,Two", "10,Ten"]
+def test_main_fails_without_a_live_snapshot(tmp_path, monkeypatch):
+    monkeypatch.setattr(vfc.config, "LIVE_DIR", tmp_path / "empty")
+    assert vfc.main([]) == 1
