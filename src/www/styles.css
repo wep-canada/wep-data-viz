@@ -1,0 +1,111 @@
+/* Colour tokens (--wd-*) are injected from src/core/theme.py so light and dark stay in sync. */
+
+body {
+  background: var(--wd-page);
+  color: var(--wd-text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.navbar { background: var(--wd-surface) !important; border-bottom: 1px solid var(--wd-border); }
+.navbar .navbar-brand, .navbar .nav-link { color: var(--wd-text) !important; }
+.navbar .nav-link.active { font-weight: 600; box-shadow: inset 0 -2px 0 var(--wd-accent); }
+
+.card, .bslib-sidebar-layout > .sidebar {
+  --bs-card-bg: var(--wd-surface);
+  --bs-card-border-color: var(--wd-border);
+  --bs-card-cap-bg: transparent;
+  background: var(--wd-surface);
+  color: var(--wd-text);
+  border-color: var(--wd-border);
+}
+.card-header { font-weight: 600; color: var(--wd-text); border-bottom: 1px solid var(--wd-border); }
+.bslib-sidebar-layout { --_sidebar-bg: var(--wd-surface); }
+
+.nav-underline .nav-link { color: var(--wd-text-2); }
+.nav-underline .nav-link.active { color: var(--wd-text); border-bottom-color: var(--wd-accent); }
+
+/* Notices and small print */
+.notice {
+  background: var(--wd-surface);
+  border: 1px solid var(--wd-border);
+  border-left: 4px solid var(--wd-accent);
+  color: var(--wd-text-2);
+  border-radius: 6px;
+  padding: 0.6rem 0.9rem;
+  margin-bottom: 0.9rem;
+  font-size: 0.9rem;
+}
+.side-note, .map-note, .lg-note { color: var(--wd-muted); font-size: 0.85rem; }
+.map-note { margin: 0.5rem 0 0.2rem; }
+
+/* Freshness pills */
+.pills { display: flex; flex-wrap: wrap; gap: 0.4rem 0.6rem; margin-bottom: 0.9rem; }
+.pill {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  background: var(--wd-surface); border: 1px solid var(--wd-border); border-radius: 999px;
+  padding: 0.2rem 0.7rem; font-size: 0.8rem; color: var(--wd-text-2);
+}
+.pill strong { color: var(--wd-text); font-weight: 600; }
+.pill-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 1.15rem; height: 1.15rem; border-radius: 50%;
+  font-size: 0.75rem; font-weight: 700; margin-right: 0.35rem;
+  color: #0b0b0b;
+}
+.pill .pill-icon { margin-right: 0; }
+.st-fresh { background: var(--wd-good); }
+.st-degraded, .st-stale { background: var(--wd-warning); }
+.st-missing { background: var(--wd-critical); color: #ffffff; }
+
+/* KPI tiles */
+.kpi-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.75rem; margin-bottom: 1rem;
+}
+.kpi {
+  background: var(--wd-surface); border: 1px solid var(--wd-border); border-radius: 8px;
+  padding: 0.8rem 1rem;
+}
+.kpi-label { color: var(--wd-text-2); font-size: 0.85rem; }
+.kpi-value { color: var(--wd-text); font-size: 1.75rem; font-weight: 650; line-height: 1.2; margin: 0.15rem 0;
+             white-space: nowrap; }
+.kpi-sub { color: var(--wd-muted); font-size: 0.8rem; }
+
+/* Until map tiles load (or if they are blocked) show a neutral surface, not Leaflet's default grey */
+.leaflet-container { background: var(--wd-page) !important; }
+
+/* Selected-fire detail under the map */
+.fire-detail { border: 1px solid var(--wd-border); border-left: 4px solid var(--wd-orange); border-radius: 6px;
+               padding: 0.6rem 0.9rem; margin: 0.4rem 0; color: var(--wd-text-2); font-size: 0.9rem; }
+.fd-title { color: var(--wd-text); font-size: 1rem; margin-bottom: 0.3rem; }
+.fd-list { display: grid; grid-template-columns: max-content 1fr; gap: 0.1rem 0.9rem; margin: 0 0 0.4rem; }
+.fd-list dt { font-weight: 600; color: var(--wd-text-2); }
+.fd-list dd { margin: 0; color: var(--wd-text); }
+.fire-detail a { color: var(--wd-accent); }
+
+/* Map legend */
+.legend { display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; align-items: center; padding: 0.3rem 0 0.1rem; }
+.lg-item { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--wd-text-2); }
+.lg { display: inline-block; flex: none; }
+.lg-dot { width: 0.8rem; height: 0.8rem; border-radius: 50%; border: 2px solid var(--wd-surface); box-shadow: 0 0 0 1px var(--wd-border); }
+.lg-ooc { background: var(--wd-orange); }
+.lg-other { background: var(--wd-context); }
+.lg-hot { background: var(--wd-violet); }
+.lg-box { width: 1.1rem; height: 0.8rem; border-width: 2px; border-style: solid; border-radius: 2px; }
+.lg-order { border-color: var(--wd-critical); background: color-mix(in srgb, var(--wd-critical) 30%, transparent); }
+.lg-alert { border-color: var(--wd-warning); border-style: dashed;
+            background: color-mix(in srgb, var(--wd-warning) 30%, transparent); }
+
+/* Sources page */
+.sources-page { max-width: 1100px; margin: 0 auto; padding: 0.5rem 0 2rem; }
+.sources-table { --bs-table-bg: transparent; --bs-table-color: var(--wd-text);
+                 --bs-table-border-color: var(--wd-border); font-size: 0.9rem; }
+.sources-table a, .sources-page a { color: var(--wd-accent); }
+.sources-table th { color: var(--wd-text-2); font-weight: 600; }
+
+/* Keyboard focus that is always visible */
+:focus-visible { outline: 3px solid var(--wd-accent); outline-offset: 2px; }
+
+@media (max-width: 640px) {
+  .kpi-value { font-size: 1.6rem; }
+}

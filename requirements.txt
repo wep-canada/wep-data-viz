@@ -1,0 +1,11 @@
+# Runtime dependencies (what Posit Connect Cloud installs). Pinned to the versions the tests ran on.
+# Tested on Python 3.11.
+shiny==1.8.0
+shinywidgets==0.8.1
+ipywidgets==8.1.9
+ipyleaflet==0.20.0
+anywidget==0.11.0
+plotly==7.1.0
+pandas==3.0.2
+pyarrow==25.0.1
+requests==2.33.1
