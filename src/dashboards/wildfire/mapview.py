@@ -1,9 +1,24 @@
 """The Leaflet map.
 
 Layers, drawn bottom to top: fire perimeters, evacuation areas, satellite hotspots, fires.
-Fires use the "emphasis" form: out-of-control fires in the accent colour, everything else in
-grey. Evacuation orders and alerts use the reserved status colours and differ by line style
-(solid for orders, dashed for alerts), so colour is never the only cue.
+Fires are coloured by their real status - out of control in the fire-orange accent (the
+same colour used for perimeters and everywhere else "fire" appears), being held in amber,
+under control in green - so the map shows what's actually going on at a glance instead of
+lumping every non-urgent fire into one vague grey "other" bucket. Out-of-control fires are
+still drawn last and slightly larger, so the most urgent ones are never hidden underneath
+the rest. Evacuation orders and alerts use the same reserved status colours and differ by
+line style too (solid for orders, dashed for alerts), so colour is never the only cue for
+either.
+
+The ``Map`` widget itself is created once per session (``new_map``) and its overlay
+layers are then replaced in place (``update_layers``) whenever a filter or a "Map layers"
+checkbox changes. It used to be rebuilt from scratch - a fresh ``ipyleaflet.Map`` - on
+every such change; that mostly worked, but Leaflet can fail to reinitialize a new map
+into a browser element that still holds a previous map instance, especially across two
+rebuilds in quick succession (uncheck a layer, then recheck it). When that happens the
+old tiles stay frozen on screen and the new overlay layers never attach, which is the
+blank grey landmass a layer toggle used to sometimes produce. ``build_map`` is kept as a
+convenience for tests and other one-shot callers; it just calls the two in sequence.
 """
 
 from __future__ import annotations
@@ -16,7 +31,7 @@ from ipywidgets import Layout
 
 from core import config
 from core.frames import evac_frame
-from core.normalize import normalize_evac_status
+from core.normalize import FIRE_STATUS_ORDER, normalize_evac_status
 from core.theme import tokens
 
 BC_CENTER = (54.5, -125.5)
@@ -115,6 +130,17 @@ def wildfire_evac_features(fc: dict) -> dict:
     return {"type": "FeatureCollection", "features": kept}
 
 
+def status_colour(status: str, t: dict) -> str:
+    """The colour a fire's status reads as on the map - the same reserved status colours
+    used everywhere else (KPIs, freshness pills), so "amber" always means the same thing.
+    An unrecognized or "Out" status falls back to neutral grey rather than guessing."""
+    return {
+        "Out of Control": t["orange"],
+        "Being Held": t["warning"],
+        "Under Control": t["good"],
+    }.get(status, t["context"])
+
+
 def evac_style(feature: dict, mode: str) -> dict:
     t = tokens(mode)
     status = normalize_evac_status((feature.get("properties") or {}).get("ORDER_ALERT_STATUS"))
@@ -125,20 +151,28 @@ def evac_style(feature: dict, mode: str) -> dict:
     return style
 
 
-def build_map(*, points: pd.DataFrame, perimeters_fc: dict, evac_fc: dict, hotspots_fc: dict,
-              layers: set[str], mode: str,
-              on_select: Callable[[str], None] | None = None) -> Map:
-    """Build the map. ``on_select(fire_number)`` is called when a fire marker is clicked."""
-    t = tokens(mode)
-    tile = TileLayer(url=tile_url(mode), attribution=ATTRIBUTION,
-                     max_zoom=18)
-    fmap = Map(center=BC_CENTER, zoom=BC_ZOOM, basemap=tile, scroll_wheel_zoom=True,
+def new_map(mode: str) -> Map:
+    """Create the map's underlying ``ipyleaflet.Map``, with only its base tile layer.
+
+    Call this once per session and keep the result; feed it to ``update_layers`` on every
+    later change instead of building a new ``Map``. See the module docstring for why.
+    """
+    tile = TileLayer(url=tile_url(mode), attribution=ATTRIBUTION, max_zoom=18)
+    return Map(center=BC_CENTER, zoom=BC_ZOOM, basemap=tile, scroll_wheel_zoom=True,
                layout=Layout(height="560px", width="100%"))
+
+
+def _build_overlays(*, points: pd.DataFrame, perimeters_fc: dict, evac_fc: dict, hotspots_fc: dict,
+                    layers: set[str], mode: str,
+                    on_select: Callable[[str], None] | None = None) -> list:
+    """The overlay layers (everything but the base tiles), bottom to top."""
+    t = tokens(mode)
+    overlays: list = []
 
     if "perimeters" in layers:
         shown = filter_perimeters(perimeters_fc, set(points["fire_number"].astype(str)))
         if shown["features"]:
-            fmap.add(GeoJSON(
+            overlays.append(GeoJSON(
                 data=shown, name="Fire perimeters",
                 style={"color": t["orange"], "weight": 1.5, "fillColor": t["orange"], "fillOpacity": 0.2},
                 hover_style={"weight": 3, "fillOpacity": 0.4}))
@@ -146,12 +180,12 @@ def build_map(*, points: pd.DataFrame, perimeters_fc: dict, evac_fc: dict, hotsp
     if "evacuations" in layers:
         shown = wildfire_evac_features(evac_fc)
         if shown["features"]:
-            fmap.add(GeoJSON(data=shown, name="Evacuation orders and alerts",
-                             style_callback=lambda feature: evac_style(feature, mode),
-                             hover_style={"weight": 3, "fillOpacity": 0.45}))
+            overlays.append(GeoJSON(data=shown, name="Evacuation orders and alerts",
+                                    style_callback=lambda feature: evac_style(feature, mode),
+                                    hover_style={"weight": 3, "fillOpacity": 0.45}))
 
     if "hotspots" in layers and hotspots_fc.get("features"):
-        fmap.add(GeoJSON(
+        overlays.append(GeoJSON(
             data=hotspots_fc, name="Satellite hotspots (24 h)",
             point_style={"radius": 3, "color": t["violet"], "fillColor": t["violet"],
                          "fillOpacity": 0.7, "weight": 0}))
@@ -159,18 +193,23 @@ def build_map(*, points: pd.DataFrame, perimeters_fc: dict, evac_fc: dict, hotsp
     if "fires" in layers and not points.empty:
         frame = points.dropna(subset=["lat", "lon"])
         radii = frame["size_ha"].map(radius_for)
-        # Grey context first, then out-of-control fires on top (the emphasis form).
-        for is_ooc in (False, True):
-            in_group = frame["status"].eq("Out of Control") == is_ooc
+        # Draw least urgent first, out-of-control last/on top (the emphasis form), colouring
+        # each real status distinctly instead of lumping non-urgent fires into one grey bucket.
+        present = set(frame["status"])
+        draw_order = sorted(present - set(FIRE_STATUS_ORDER))  # any unrecognized status, drawn first
+        draw_order += [s for s in reversed(FIRE_STATUS_ORDER) if s in present]
+        for status in draw_order:
+            is_ooc = status == "Out of Control"
+            in_group = frame["status"] == status
             for radius in sorted(set(radii[in_group])):
                 subset = frame[in_group & (radii == radius)]
                 layer = GeoJSON(
                     data=fires_feature_collection(subset),
-                    name="Out-of-control fires" if is_ooc else "Other fires",
+                    name=f"{status} fires",
                     point_style={
                         "radius": radius + (1 if is_ooc else 0),
                         "color": t["surface"], "weight": 2 if is_ooc else 1,
-                        "fillColor": t["orange"] if is_ooc else t["context"],
+                        "fillColor": status_colour(status, t),
                         "fillOpacity": 0.9 if is_ooc else 0.75,
                     },
                     hover_style={"weight": 3, "fillOpacity": 1.0},
@@ -181,7 +220,44 @@ def build_map(*, points: pd.DataFrame, perimeters_fc: dict, evac_fc: dict, hotsp
                         if number:
                             _cb(str(number))
                     layer.on_click(handler)
-                fmap.add(layer)
+                overlays.append(layer)
+    return overlays
+
+
+def update_layers(fmap: Map, *, points: pd.DataFrame, perimeters_fc: dict, evac_fc: dict,
+                  hotspots_fc: dict, layers: set[str], mode: str,
+                  on_select: Callable[[str], None] | None = None) -> None:
+    """Replace ``fmap``'s overlay layers in place. ``on_select(fire_number)`` is called
+    when a fire marker is clicked.
+
+    The base tile layer is left alone unless ``mode`` (light/dark) changed, in which case
+    its URL is swapped rather than replacing the layer. Reassigning ``fmap.layers`` once,
+    rather than calling ``.remove()``/``.add()`` layer by layer, sends the browser a single
+    update instead of a flurry of them.
+    """
+    base = fmap.layers[0] if fmap.layers else None
+    wanted_tile_url = tile_url(mode)
+    if base is not None and getattr(base, "url", None) != wanted_tile_url:
+        base.url = wanted_tile_url
+
+    overlays = _build_overlays(points=points, perimeters_fc=perimeters_fc, evac_fc=evac_fc,
+                               hotspots_fc=hotspots_fc, layers=layers, mode=mode,
+                               on_select=on_select)
+    fmap.layers = ((base,) if base is not None else ()) + tuple(overlays)
+
+
+def build_map(*, points: pd.DataFrame, perimeters_fc: dict, evac_fc: dict, hotspots_fc: dict,
+              layers: set[str], mode: str,
+              on_select: Callable[[str], None] | None = None) -> Map:
+    """Build a map with its overlay layers already in place, in one call.
+
+    Convenient for tests and other one-shot callers. The live app instead keeps a single
+    ``Map`` per session (``new_map``) and calls ``update_layers`` on every later change -
+    see the module docstring for why that split matters there.
+    """
+    fmap = new_map(mode)
+    update_layers(fmap, points=points, perimeters_fc=perimeters_fc, evac_fc=evac_fc,
+                  hotspots_fc=hotspots_fc, layers=layers, mode=mode, on_select=on_select)
     return fmap
 
 

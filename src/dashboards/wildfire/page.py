@@ -52,12 +52,14 @@ def link_cell(url, label: str):
 
 def legend():
     return ui.div(
-        ui.span(ui.span(class_="lg lg-dot lg-ooc"), "Out-of-control fire", class_="lg-item"),
-        ui.span(ui.span(class_="lg lg-dot lg-other"), "Other active fire", class_="lg-item"),
+        ui.span(ui.span(class_="lg lg-dot lg-ooc"), "Out of control", class_="lg-item"),
+        ui.span(ui.span(class_="lg lg-dot lg-held"), "Being held", class_="lg-item"),
+        ui.span(ui.span(class_="lg lg-dot lg-under"), "Under control", class_="lg-item"),
         ui.span(ui.span(class_="lg lg-box lg-order"), "Evacuation order (solid)", class_="lg-item"),
         ui.span(ui.span(class_="lg lg-box lg-alert"), "Evacuation alert (dashed)", class_="lg-item"),
         ui.span(ui.span(class_="lg lg-dot lg-hot"), "Satellite hotspot", class_="lg-item"),
-        ui.span("Marker size grows with hectares burned.", class_="lg-note"),
+        ui.span("Marker size grows with hectares burned. Fires declared out (if shown) are grey.",
+               class_="lg-note"),
         class_="legend",
     )
 
@@ -231,10 +233,24 @@ def wildfire_server(input, output, session, mode: Callable[[], str]):
             class_="fire-detail",
         )
 
+    @reactive.calc
+    def map_widget():
+        # Built once per session (rebuilt only if the light/dark mode changes - a full
+        # theme swap). Every other change (a filter, a "Map layers" checkbox) updates this
+        # same widget's layers in place via `_update_map_layers` below, rather than handing
+        # `render_widget` a brand-new `Map` each time - see the `mapview` module docstring
+        # for why rebuilding on every change could leave the map blank after a toggle.
+        return mapview.new_map(mode())
+
     @render_widget
     def fire_map():
+        return map_widget()
+
+    @reactive.effect
+    def _update_map_layers():
         d = live()
-        return mapview.build_map(
+        mapview.update_layers(
+            map_widget(),
             points=filtered(),
             perimeters_fc=d.fc("bc_fire_perimeters"),
             evac_fc=d.fc("bc_evac_orders"),

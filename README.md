@@ -135,7 +135,6 @@ cultural fire). Those rows carry a note and are deliberately not charted.
 ## Known limitations
 
 - **Map tiles need internet.** They come from CARTO; if blocked the map shows fires on a blank background.
-- **The map redraws when a filter changes**, so it resets to the province view. Updating layers in place is a later improvement.
 - **Console message.** Switching tabs while a chart is still starting can log `[anywidget] Failed to initialize model` in the browser console. It has no visible effect; the browser tests ignore it.
 - **Repository size.** Daily snapshots of the perimeter layer add up. If the repo grows past a few hundred MB, move snapshots to GitHub release assets or drop the perimeter snapshot (the live fetch does not need it).
 - **Scheduled workflows can be paused** by GitHub after 60 days without repo activity (from memory; check GitHub's docs). Watch for it in the off-season.

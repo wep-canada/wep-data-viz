@@ -154,6 +154,13 @@ def layers_named(fmap, name):
     return [layer for layer in fmap.layers if getattr(layer, "name", "") == name]
 
 
+FIRE_STATUS_LAYER_NAMES = [f"{s} fires" for s in ("Out of Control", "Being Held", "Under Control", "Out")]
+
+
+def fire_marker_layers(fmap):
+    return [layer for layer in fmap.layers if getattr(layer, "name", "") in FIRE_STATUS_LAYER_NAMES]
+
+
 def build(points, mode="light", layers=None, **kw):
     return mapview.build_map(
         points=points, perimeters_fc=fc("bc_fire_perimeters"), evac_fc=fc("bc_evac_orders"),
@@ -165,7 +172,7 @@ def test_map_has_the_requested_layers_only(points):
     shown = filters.apply_fire_filters(points, filters.FireFilters())
     full = build(shown)
     assert layers_named(full, "Fire perimeters") and layers_named(full, "Evacuation orders and alerts")
-    assert layers_named(full, "Satellite hotspots (24 h)") and layers_named(full, "Out-of-control fires")
+    assert layers_named(full, "Satellite hotspots (24 h)") and layers_named(full, "Out of Control fires")
     bare = build(shown, layers=[])
     assert len(bare.layers) == 1                                    # just the base map
     assert len(build(shown, layers=["hotspots"]).layers) == 2
@@ -192,7 +199,7 @@ def test_fire_markers_report_clicks(points):
     shown = filters.apply_fire_filters(points, filters.FireFilters())
     clicked = []
     fmap = build(shown, layers=["fires"], on_select=clicked.append)
-    marker_layers = layers_named(fmap, "Out-of-control fires") + layers_named(fmap, "Other fires")
+    marker_layers = fire_marker_layers(fmap)
     assert marker_layers
     feature = marker_layers[0].data["features"][0]
     marker_layers[0]._click_callbacks(feature=feature, event="click")
@@ -209,12 +216,23 @@ def test_every_fire_is_drawn_exactly_once(points):
 
 
 def test_out_of_control_fires_are_drawn_last_in_the_accent_colour(points):
-    shown = filters.apply_fire_filters(points, filters.FireFilters())
+    shown = filters.apply_fire_filters(points, filters.FireFilters(include_out=True))
     fmap = build(shown, layers=["fires"])
     names = [layer.name for layer in fmap.layers[1:]]
-    assert names.index("Out-of-control fires") > max(i for i, n in enumerate(names) if n == "Other fires")
-    ooc = layers_named(fmap, "Out-of-control fires")[0]
+    other_names = [n for n in names if n != "Out of Control fires"]
+    assert names.index("Out of Control fires") > max(names.index(n) for n in other_names)
+    ooc = layers_named(fmap, "Out of Control fires")[0]
     assert ooc.point_style["fillColor"] == LIGHT["orange"]
+
+
+def test_being_held_and_under_control_fires_get_their_own_colours(points):
+    shown = filters.apply_fire_filters(points, filters.FireFilters())
+    fmap = build(shown, layers=["fires"])
+    assert fire_marker_layers(fmap)  # sanity: the helper actually matches real layer names
+    held_layer = layers_named(fmap, "Being Held fires")[0]
+    under_layer = layers_named(fmap, "Under Control fires")[0]
+    assert held_layer.point_style["fillColor"] == LIGHT["warning"]
+    assert under_layer.point_style["fillColor"] == LIGHT["good"]
 
 
 def test_perimeters_follow_the_filtered_fires(points):
@@ -223,6 +241,43 @@ def test_perimeters_follow_the_filtered_fires(points):
     kept = mapview.filter_perimeters(all_perims, {number})
     assert [f["properties"]["FIRE_NUMBER"] for f in kept["features"]] == [number]
     assert mapview.filter_perimeters(all_perims, set())["features"] == []
+
+
+def test_update_layers_reuses_the_same_map_and_base_tile(points):
+    # This is the map-toggle bug fix: `update_layers` must mutate the same `Map` object
+    # in place (never construct a new one), including keeping the same base tile layer
+    # when the mode hasn't changed, or the browser can be left with a leaked, stuck map.
+    shown = filters.apply_fire_filters(points, filters.FireFilters())
+    fmap = mapview.new_map("light")
+    base_tile = fmap.layers[0]
+    mapview.update_layers(fmap, points=shown, perimeters_fc=fc("bc_fire_perimeters"),
+                          evac_fc=fc("bc_evac_orders"), hotspots_fc=fc("cwfis_hotspots"),
+                          layers=set(mapview.LAYER_CHOICES), mode="light")
+    assert fmap.layers[0] is base_tile                               # base tile untouched
+    assert layers_named(fmap, "Fire perimeters")
+
+    # Toggling a layer off then back on (the reported bug) must not blank the map: the
+    # fire markers must come back exactly as before.
+    mapview.update_layers(fmap, points=shown, perimeters_fc=fc("bc_fire_perimeters"),
+                          evac_fc=fc("bc_evac_orders"), hotspots_fc=fc("cwfis_hotspots"),
+                          layers=set(mapview.LAYER_CHOICES) - {"evacuations"}, mode="light")
+    assert not layers_named(fmap, "Evacuation orders and alerts")
+    mapview.update_layers(fmap, points=shown, perimeters_fc=fc("bc_fire_perimeters"),
+                          evac_fc=fc("bc_evac_orders"), hotspots_fc=fc("cwfis_hotspots"),
+                          layers=set(mapview.LAYER_CHOICES), mode="light")
+    assert fmap.layers[0] is base_tile
+    assert layers_named(fmap, "Evacuation orders and alerts")
+    assert fire_marker_layers(fmap)
+
+
+def test_update_layers_swaps_the_base_tile_when_mode_changes(points):
+    fmap = mapview.new_map("light")
+    assert "light_all" in fmap.layers[0].url
+    mapview.update_layers(fmap, points=points, perimeters_fc=fc("bc_fire_perimeters"),
+                          evac_fc=fc("bc_evac_orders"), hotspots_fc=fc("cwfis_hotspots"),
+                          layers=set(), mode="dark")
+    assert "dark_all" in fmap.layers[0].url
+    assert len(fmap.layers) == 1
 
 
 def test_marker_radius_grows_with_size():

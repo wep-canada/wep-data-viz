@@ -25,3 +25,13 @@ First working scaffold.
 
 The live endpoints have been confirmed working against the real government servers (daily refresh
 runs green in GitHub Actions).
+
+- Fires are coloured by their real status (out of control / being held / under control) instead of
+  a binary "out-of-control vs. everything else" grey bucket, on the map, the legend, and its CSS.
+- Fixed the map sometimes going blank after toggling a "Map layers" checkbox off and back on. The
+  map used to be torn down and rebuilt from scratch (a brand-new `ipyleaflet.Map`) on every filter
+  or layer change; Leaflet can fail to reinitialize a new map into a browser element that still
+  holds a previous one, especially across two rebuilds in quick succession, leaving frozen tiles
+  and no overlay layers. The map is now built once per session and its layers are updated in place
+  (`mapview.new_map` / `mapview.update_layers`) - this also means the map no longer resets to the
+  province view on every filter change, since the underlying Leaflet map is never recreated.

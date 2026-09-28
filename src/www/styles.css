@@ -109,7 +109,8 @@ body {
 .lg { display: inline-block; flex: none; }
 .lg-dot { width: 0.8rem; height: 0.8rem; border-radius: 50%; border: 2px solid var(--wd-surface); box-shadow: 0 0 0 1px var(--wd-border); }
 .lg-ooc { background: var(--wd-orange); }
-.lg-other { background: var(--wd-context); }
+.lg-held { background: var(--wd-warning); }
+.lg-under { background: var(--wd-good); }
 .lg-hot { background: var(--wd-violet); }
 .lg-box { width: 1.1rem; height: 0.8rem; border-width: 2px; border-style: solid; border-radius: 2px; }
 .lg-order { border-color: var(--wd-critical); background: color-mix(in srgb, var(--wd-critical) 30%, transparent); }
