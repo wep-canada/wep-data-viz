@@ -24,6 +24,26 @@ body {
 .nav-underline .nav-link { color: var(--wd-text-2); }
 .nav-underline .nav-link.active { color: var(--wd-text); border-bottom-color: var(--wd-accent); }
 
+/* Section tabs (Overview / Equity and governance / Data gaps): rounded pills in the
+   fire-orange accent, so they read as a clear set of destinations rather than quiet
+   underlined text. */
+.nav-pills { gap: 0.5rem; margin-bottom: 1rem; }
+.nav-pills .nav-link {
+  color: var(--wd-text-2);
+  background: var(--wd-surface);
+  border: 1px solid var(--wd-border);
+  border-radius: 10px;
+  padding: 0.45rem 1.1rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.nav-pills .nav-link:hover { border-color: var(--wd-orange); color: var(--wd-text); }
+.nav-pills .nav-link.active {
+  background: var(--wd-orange);
+  border-color: var(--wd-orange);
+  color: #ffffff;
+}
+
 /* Notices and small print */
 .notice {
   background: var(--wd-surface);

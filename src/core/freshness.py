@@ -14,6 +14,13 @@ from typing import Any
 from . import config
 from .io import read_json, write_json
 
+# Shared with every page that shows a freshness state, so the same state never reads
+# differently in two places (the Overview tab's pills used to say "Degraded" for the
+# exact state the Data and sources page called "Last refresh failed").
+STATE_ICON = {"fresh": "✓", "degraded": "!", "stale": "!", "missing": "✕"}
+STATE_LABEL = {"fresh": "Fresh", "degraded": "Last refresh failed", "stale": "Stale",
+              "missing": "No data yet"}
+
 
 def utcnow() -> datetime:
     return datetime.now(timezone.utc)

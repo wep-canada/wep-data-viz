@@ -9,11 +9,9 @@ from shiny import module, reactive, render, ui
 from shinywidgets import output_widget, render_widget
 
 from core import config
+from core.freshness import STATE_ICON, STATE_LABEL
 from . import charts, data, filters, mapview
 from . import kpis as kpi_calc
-
-STATE_ICON = {"fresh": "✓", "degraded": "!", "stale": "!", "missing": "✕"}
-STATE_LABEL = {"fresh": "Fresh", "degraded": "Degraded", "stale": "Stale", "missing": "No data"}
 
 NOTICE = (
     "For awareness and analysis only, not an emergency alert service. For evacuation orders and "
@@ -39,6 +37,17 @@ def freshness_pill(status: dict):
         f" · {status['text']}",
         class_="pill",
     )
+
+
+def link_cell(url, label: str):
+    """A clickable link for a data-grid cell, or "" if there's no safe URL to link to.
+
+    Shiny's DataGrid renders htmltools tags in a cell as real HTML rather than escaping
+    them to text, so this is what makes the fire list's and indicator table's "Link"
+    columns actually clickable instead of showing a bare URL string.
+    """
+    safe = mapview.safe_https_url(url)
+    return ui.a(label, href=safe, target="_blank", rel="noopener") if safe else ""
 
 
 def legend():
@@ -144,7 +153,7 @@ def _gaps_panel():
 
 @module.ui
 def wildfire_ui():
-    return ui.navset_underline(
+    return ui.navset_pill(
         ui.nav_panel("Overview", _overview_panel()),
         ui.nav_panel("Equity and governance", _equity_panel()),
         ui.nav_panel("Data gaps", _gaps_panel()),
@@ -256,10 +265,10 @@ def wildfire_server(input, output, session, mode: Callable[[], str]):
             "Status": frame["status"],
             "Cause": frame["cause"],
             "Size (ha)": frame["size_ha"].round(1),
-            "Ignited": frame["ignition_date"].dt.strftime("%Y-%m-%d"),
+            "Ignited": frame["ignition_date"].dt.strftime("%Y-%m-%d").fillna("—"),
             "Fire centre": frame["centre"].map(lambda c: filters.centre_label(c, centre_names)),
             "Near": frame["description"],
-            "Link": frame["url"],
+            "Link": frame["url"].map(lambda u: link_cell(u, "Details")),
         })
         return render.DataGrid(view, width="100%", height="420px")
 
@@ -268,7 +277,7 @@ def wildfire_server(input, output, session, mode: Callable[[], str]):
         view = mapview.evac_summary(live().fc("bc_evac_orders")).rename(columns={
             "name": "Area", "status": "Status", "agency": "Issued by", "homes": "Homes",
             "population": "People", "start_date": "Event start"})
-        view["Event start"] = view["Event start"].dt.strftime("%Y-%m-%d")
+        view["Event start"] = view["Event start"].dt.strftime("%Y-%m-%d").fillna("—")
         return render.DataGrid(view, width="100%", height="300px")
 
     # ------------------------------------------------------ equity and governance
@@ -287,9 +296,10 @@ def wildfire_server(input, output, session, mode: Callable[[], str]):
     @render.data_frame
     def indicator_table():
         view = indicators[["label", "period", "value", "unit", "definition", "source_name",
-                           "origin", "notes", "source_url"]].rename(columns={
+                           "origin", "notes"]].rename(columns={
             "label": "Indicator", "period": "Period", "value": "Value", "unit": "Unit",
             "definition": "Definition", "source_name": "Source", "origin": "Checked",
-            "notes": "Notes", "source_url": "Link"})
+            "notes": "Notes"})
+        view["Link"] = indicators["source_url"].map(lambda u: link_cell(u, "Open"))
         return render.DataGrid(view, width="100%", height="420px")
 

@@ -11,11 +11,9 @@ from datetime import datetime
 from shiny import module, reactive, render, ui
 
 from core import config, freshness
+from core.freshness import STATE_ICON, STATE_LABEL
 from pipeline.sources import SOURCES
 from pipeline.watch import PAGES
-
-STATE_ICON = {"fresh": "✓", "degraded": "!", "stale": "!", "missing": "✕"}
-STATE_LABEL = {"fresh": "Fresh", "degraded": "Last refresh failed", "stale": "Stale", "missing": "No data yet"}
 
 
 def source_rows(manifest: dict, now: datetime | None = None) -> list[dict]:
