@@ -1,0 +1,46 @@
+name: weekly source watch
+
+# Checks the pages that publish numbers as text (no data feed). If one changed, opens an issue so
+# you can update data/curated/indicators.csv by hand.
+
+on:
+  schedule:
+    - cron: "43 14 * * 1"       # Mondays 14:43 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - run: pip install -r requirements.txt
+
+      - name: Check pages
+        working-directory: src
+        env:
+          WEPDASH_CONTACT: ${{ github.server_url }}/${{ github.repository }}
+        run: python -m pipeline.watch --report-path "$GITHUB_WORKSPACE/report.md"
+
+      - name: Save fingerprints
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/watch
+          if git diff --cached --quiet; then echo "No fingerprint changes."; else git commit -m "data: update page fingerprints" && git push; fi
+
+      - name: Open an issue if a page changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -s report.md ]; then
+            gh issue create --title "Source pages changed ($(date -u +%F))" --body-file report.md
+          fi
