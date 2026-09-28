@@ -1,0 +1,18 @@
+{
+  "bc_cultural_fire": {
+    "sha256": "3caf40fb610fd45a33d2c798fb29ff540d56858929f69030e1dc6a6da7a939d0",
+    "url": "https://www2.gov.bc.ca/gov/content/safety/wildfire-status/prevention/prescribed-burning"
+  },
+  "bc_firesmart_funding": {
+    "sha256": "4a10ba4a239ac3ce2e477e6039a3fed3e675c106aa4d6951686a4e96018a785a",
+    "url": "https://www2.gov.bc.ca/gov/content/safety/wildfire-status/prevention/funding-for-wildfire-prevention/crip/fcfs"
+  },
+  "bc_season_summary": {
+    "sha256": "84b6c4a67887917f5e8e5ad8b96da19ebd6f2e658b519912b83ee66e9c58c65b",
+    "url": "https://www2.gov.bc.ca/gov/content/safety/wildfire-status/about-bcws/wildfire-history/wildfire-season-summary"
+  },
+  "isc_evacuations": {
+    "sha256": "e929d3ed085cb6174f32864dd8e1ce10f3f8a12c2da92ceca9eb71ed03f83fea",
+    "url": "https://www.sac-isc.gc.ca/eng/1583177459681/1583177553276"
+  }
+}
