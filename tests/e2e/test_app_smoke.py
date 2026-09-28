@@ -125,30 +125,20 @@ def real_problems(problems):
 
 
 def clear_filters(page):
-    """Reset the sidebar's Fire centre / Fire status / Cause pickers back to "show
-    everything". The dashboard now opens narrowed to a representative default instead of
-    showing every fire at once (see ``filters.default_selection``), so a test that wants
-    the full, unfiltered data has to clear these chips first. Min size and the layers
-    checkboxes aren't selectize controls, so this only ever touches the three that are.
+    """Reset the sidebar back to "show everything" via the "Show all fires" link, for a
+    test that wants the full, unfiltered data. The dashboard opens narrowed to a
+    representative default instead of showing every fire at once (see
+    ``filters.default_selection``), but "all fires, no restriction" stays one click away.
 
-    Removing a chip gives its control focus, which pops open a dropdown of the remaining
-    options - left open, that dropdown sits on top of and intercepts the next chip's own
-    remove click. ``force=True`` clicks through it regardless, and Escape closes it before
-    the next iteration so later clicks land normally too.
-
-    Clearing all three filters means three separate round trips to the server (one per
-    input), each swapping the map's overlay layers in place (see ``mapview.update_layers``)
-    - so the fire count on screen passes through a few in-between values before settling.
-    A caller that queries the map (its markers, click handlers) right after this returns
-    would be racing that settling: it could click a marker from a layer that's about to be
-    replaced, and the click silently goes nowhere. Waiting here for the fully-cleared
-    count (all 24 active fires) makes the wait this function's problem, not every caller's.
+    Resetting is four separate round trips to the server (one per filter input), each
+    swapping the map's overlay layers in place (see ``mapview.update_layers``) - so the
+    fire count on screen passes through a few in-between values before settling. A caller
+    that queries the map (its markers, click handlers) right after this returns would be
+    racing that settling: it could click a marker from a layer that's about to be replaced,
+    and the click silently goes nowhere. Waiting here for the fully-cleared count (all 24
+    active fires) makes the wait this function's problem, not every caller's.
     """
-    remove = page.locator(".selectize-control .item .remove")
-    while remove.count():
-        remove.first.click(force=True)
-        page.keyboard.press("Escape")
-        page.wait_for_timeout(100)
+    page.get_by_role("link", name="Show all fires").click()
     page.wait_for_function("document.body.innerText.includes('Showing 24 fires')", timeout=15000)
 
 
@@ -163,7 +153,7 @@ def test_overview_renders_headline_numbers_and_charts(new_page, server):
     assert real_problems(problems) == []
 
 
-def test_filters_start_narrowed_to_a_default_not_everything(new_page, server):
+def test_filters_start_narrowed_but_show_all_fires_resets_them(new_page, server):
     page, _ = open_page(new_page, server)
     chips = page.locator(".selectize-control .item").all_inner_texts()
     assert any("Under Control" in c for c in chips)          # the Fire status default
@@ -178,10 +168,22 @@ def test_filters_start_narrowed_to_a_default_not_everything(new_page, server):
     text = page.locator(".map-note").inner_text()
     assert "Showing 24 fires" not in text                      # narrower than "show everything"
 
+    clear_filters(page)                                        # the "Show all fires" link
+    assert page.locator(".selectize-control .item").count() == 0
+    assert page.locator("#wildfire-min_size").input_value() == "0"
+    assert "Showing 24 fires" in page.locator(".map-note").inner_text()
+
 
 def test_clicking_a_fire_shows_its_details(new_page, server):
     page, _ = open_page(new_page, server)
     clear_filters(page)                       # the default view can hide Out of Control fires
+    # clear_filters only waits for the fire *count* to settle (".map-note"); the map's own
+    # marker layers are a separate, slightly slower-to-update reactive effect
+    # (mapview.update_layers), so an Out of Control marker can still be a beat away here.
+    page.wait_for_function(
+        "[...document.querySelectorAll('path.leaflet-interactive')]"
+        ".some(p => (p.getAttribute('fill') || '').toLowerCase() === '#eb6834')",
+        timeout=10000)
     markers = page.locator("path.leaflet-interactive")
     for i in range(markers.count()):
         if (markers.nth(i).get_attribute("fill") or "").lower() == "#eb6834":

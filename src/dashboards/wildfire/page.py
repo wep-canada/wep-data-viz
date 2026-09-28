@@ -68,9 +68,9 @@ def _overview_panel():
     sidebar = ui.sidebar(
         ui.h5("Filters"),
         ui.p("Filters apply to the map, charts and fire list. The headline numbers are province-wide. "
-             "They start narrowed to a representative slice, not everything at once - clear any "
-             "filter below to widen it.",
+             "They start narrowed to a representative slice, not everything at once.",
              class_="side-note"),
+        ui.input_action_link("reset_filters", "Show all fires", class_="reset-filters-link"),
         ui.input_selectize("centres", "Fire centre", choices={}, multiple=True,
                            options={"placeholder": "All fire centres"}),
         ui.input_selectize("statuses", "Fire status", choices=filters.status_choices(), multiple=True,
@@ -204,6 +204,17 @@ def wildfire_server(input, output, session, mode: Callable[[], str]):
             with reactive.isolate():
                 selected = [c for c in (input.centres() or ()) if c in choices]
             ui.update_selectize("centres", choices=choices, selected=selected)
+
+    @reactive.effect
+    @reactive.event(input.reset_filters)
+    def _reset_filters():
+        # The starting default narrows the view (see `default_selection` above), but "all
+        # fires, no restriction" stays one click away rather than requiring each of the four
+        # filters to be cleared by hand.
+        ui.update_selectize("centres", selected=[])
+        ui.update_selectize("statuses", selected=[])
+        ui.update_selectize("causes", selected=[])
+        ui.update_select("min_size", selected="0")
 
     @reactive.calc
     def current_filters() -> filters.FireFilters:

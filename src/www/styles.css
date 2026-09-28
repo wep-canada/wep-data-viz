@@ -57,6 +57,7 @@ body {
 }
 .side-note, .map-note, .lg-note { color: var(--wd-muted); font-size: 0.85rem; }
 .map-note { margin: 0.5rem 0 0.2rem; }
+.reset-filters-link { display: inline-block; font-size: 0.85rem; font-weight: 600; margin: -0.3rem 0 0.9rem; }
 
 /* Freshness pills */
 .pills { display: flex; flex-wrap: wrap; gap: 0.4rem 0.6rem; margin-bottom: 0.9rem; }
