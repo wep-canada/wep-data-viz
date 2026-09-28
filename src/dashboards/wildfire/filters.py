@@ -62,3 +62,41 @@ def status_choices() -> dict[str, str]:
 
 def cause_choices() -> dict[str, str]:
     return {c: c for c in CAUSES}
+
+
+def default_selection(points: pd.DataFrame) -> dict:
+    """A sensible starting filter instead of "show everything at once".
+
+    A first-time, public visitor is better served by one representative slice than by
+    every fire in the province at once, so this picks a narrower Fire status, Fire centre,
+    Cause and Minimum size the same way a person would: start with Under Control fires
+    (a calmer opening view for the public than leading with Out of Control), find the fire
+    centre and cause those fires are most often associated with, and hide anything under
+    1 hectare. Each step only narrows what the previous step already left standing, so the
+    combination is never empty - a real, visible fire always beats a tidier-looking default.
+    Returns ``{"statuses": [...], "centres": [...], "causes": [...], "min_size": "0" | "1"}``,
+    each list empty (meaning "no restriction") if that step found nothing to narrow to.
+    """
+    result: dict = {"statuses": [], "centres": [], "causes": [], "min_size": "0"}
+    subset = points[points["status"] == "Under Control"]
+    if subset.empty:
+        return result
+    result["statuses"] = ["Under Control"]
+
+    counts = subset["centre"].value_counts()
+    counts = counts[counts.index != ""]
+    if not counts.empty:
+        top_centre = counts.idxmax()
+        subset = subset[subset["centre"] == top_centre]
+        result["centres"] = [top_centre]
+
+    counts = subset["cause"].value_counts()
+    if not counts.empty:
+        top_cause = counts.idxmax()
+        subset = subset[subset["cause"] == top_cause]
+        result["causes"] = [top_cause]
+
+    if (subset["size_ha"].fillna(0) >= 1).any():
+        result["min_size"] = "1"
+
+    return result

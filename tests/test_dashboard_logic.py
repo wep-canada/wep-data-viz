@@ -59,6 +59,56 @@ def test_centre_labels_fall_back_to_the_code(points):
     assert choices["1"] == "Zed" and all(v for v in choices.values())
 
 
+def _fire(status, centre, cause, size_ha):
+    return {"status": status, "centre": centre, "cause": cause, "size_ha": size_ha,
+            "fire_number": "X", "name": "X", "ignition_date": pd.NaT, "description": "",
+            "zone": "", "url": "", "of_note": False, "lon": -125.0, "lat": 54.0,
+            "is_active": status != "Out"}
+
+
+def test_default_selection_never_leaves_the_combination_empty(points):
+    defaults = filters.default_selection(points)
+    f = filters.FireFilters(centres=tuple(defaults["centres"]), statuses=tuple(defaults["statuses"]),
+                            causes=tuple(defaults["causes"]), min_size_ha=float(defaults["min_size"]))
+    assert not filters.apply_fire_filters(points, f).empty
+
+
+def test_default_selection_narrows_status_then_centre_then_cause():
+    frame = pd.DataFrame([
+        _fire("Under Control", "5", "Lightning", 12.0),
+        _fire("Under Control", "5", "Lightning", 40.0),
+        _fire("Under Control", "5", "Person", 5.0),
+        _fire("Under Control", "6", "Person", 5.0),
+        _fire("Out of Control", "5", "Lightning", 900.0),
+    ])
+    defaults = filters.default_selection(frame)
+    assert defaults == {"statuses": ["Under Control"], "centres": ["5"], "causes": ["Lightning"],
+                        "min_size": "1"}
+
+
+def test_default_selection_falls_back_to_any_size_when_the_pick_is_tiny():
+    frame = pd.DataFrame([
+        _fire("Under Control", "5", "Lightning", 0.2),
+        _fire("Under Control", "5", "Lightning", 0.4),
+    ])
+    assert filters.default_selection(frame)["min_size"] == "0"
+
+
+def test_default_selection_ignores_a_blank_centre_code():
+    frame = pd.DataFrame([
+        _fire("Under Control", "", "Lightning", 5.0),
+        _fire("Under Control", "", "Lightning", 5.0),
+        _fire("Under Control", "4", "Person", 5.0),
+    ])
+    assert filters.default_selection(frame)["centres"] == ["4"]
+
+
+def test_default_selection_is_empty_with_no_under_control_fires():
+    frame = pd.DataFrame([_fire("Out of Control", "5", "Lightning", 900.0)])
+    assert filters.default_selection(frame) == {"statuses": [], "centres": [], "causes": [],
+                                                 "min_size": "0"}
+
+
 # ------------------------------------------------------------------ KPIs
 
 def test_kpis_match_the_data(points, evac):

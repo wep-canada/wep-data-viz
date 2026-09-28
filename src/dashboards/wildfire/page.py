@@ -67,7 +67,9 @@ def legend():
 def _overview_panel():
     sidebar = ui.sidebar(
         ui.h5("Filters"),
-        ui.p("Filters apply to the map, charts and fire list. The headline numbers are province-wide.",
+        ui.p("Filters apply to the map, charts and fire list. The headline numbers are province-wide. "
+             "They start narrowed to a representative slice, not everything at once - clear any "
+             "filter below to widen it.",
              class_="side-note"),
         ui.input_selectize("centres", "Fire centre", choices={}, multiple=True,
                            options={"placeholder": "All fire centres"}),
@@ -174,6 +176,7 @@ def wildfire_server(input, output, session, mode: Callable[[], str]):
         return data.load_all()
 
     selected_fire = reactive.Value(None)   # fire number of the fire clicked on the map
+    defaults_applied = reactive.Value(False)   # the one-time starting filter, not re-applied later
 
     @reactive.calc
     def history():
@@ -182,10 +185,25 @@ def wildfire_server(input, output, session, mode: Callable[[], str]):
 
     @reactive.effect
     def _centre_choices():
-        choices = filters.centre_choices(live().points, centre_names)
+        points = live().points
+        choices = filters.centre_choices(points, centre_names)
         with reactive.isolate():
-            selected = [c for c in (input.centres() or ()) if c in choices]
-        ui.update_selectize("centres", choices=choices, selected=selected)
+            apply_defaults = not defaults_applied()
+        if apply_defaults:
+            # Runs once, the first time real data is in hand - a narrowed starting view
+            # (see `filters.default_selection`) instead of every fire in the province at
+            # once. Later `live()` refreshes (every 15 min) must never re-run this, or a
+            # visitor's own filter choices would keep getting overwritten from under them.
+            defaults = filters.default_selection(points)
+            defaults_applied.set(True)
+            ui.update_selectize("centres", choices=choices, selected=defaults["centres"])
+            ui.update_selectize("statuses", selected=defaults["statuses"])
+            ui.update_selectize("causes", selected=defaults["causes"])
+            ui.update_select("min_size", selected=defaults["min_size"])
+        else:
+            with reactive.isolate():
+                selected = [c for c in (input.centres() or ()) if c in choices]
+            ui.update_selectize("centres", choices=choices, selected=selected)
 
     @reactive.calc
     def current_filters() -> filters.FireFilters:
