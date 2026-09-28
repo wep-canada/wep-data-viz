@@ -124,6 +124,34 @@ def real_problems(problems):
     return [p for p in problems if not any(marker in p for marker in IGNORABLE)]
 
 
+def clear_filters(page):
+    """Reset the sidebar's Fire centre / Fire status / Cause pickers back to "show
+    everything". The dashboard now opens narrowed to a representative default instead of
+    showing every fire at once (see ``filters.default_selection``), so a test that wants
+    the full, unfiltered data has to clear these chips first. Min size and the layers
+    checkboxes aren't selectize controls, so this only ever touches the three that are.
+
+    Removing a chip gives its control focus, which pops open a dropdown of the remaining
+    options - left open, that dropdown sits on top of and intercepts the next chip's own
+    remove click. ``force=True`` clicks through it regardless, and Escape closes it before
+    the next iteration so later clicks land normally too.
+
+    Clearing all three filters means three separate round trips to the server (one per
+    input), each swapping the map's overlay layers in place (see ``mapview.update_layers``)
+    - so the fire count on screen passes through a few in-between values before settling.
+    A caller that queries the map (its markers, click handlers) right after this returns
+    would be racing that settling: it could click a marker from a layer that's about to be
+    replaced, and the click silently goes nowhere. Waiting here for the fully-cleared
+    count (all 24 active fires) makes the wait this function's problem, not every caller's.
+    """
+    remove = page.locator(".selectize-control .item .remove")
+    while remove.count():
+        remove.first.click(force=True)
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(100)
+    page.wait_for_function("document.body.innerText.includes('Showing 24 fires')", timeout=15000)
+
+
 def test_overview_renders_headline_numbers_and_charts(new_page, server):
     page, problems = open_page(new_page, server)
     assert page.title() == "WEP Canada wildfire resilience dashboard"
@@ -135,8 +163,25 @@ def test_overview_renders_headline_numbers_and_charts(new_page, server):
     assert real_problems(problems) == []
 
 
+def test_filters_start_narrowed_to_a_default_not_everything(new_page, server):
+    page, _ = open_page(new_page, server)
+    chips = page.locator(".selectize-control .item").all_inner_texts()
+    assert any("Under Control" in c for c in chips)          # the Fire status default
+    assert len(chips) >= 2                                    # Fire centre and Cause narrowed too
+    # The DataGrid's own "Viewing rows..." summary only renders once there are enough rows
+    # to need paging, so it can be entirely absent for a narrowed default - the always-on
+    # ".map-note" ("Showing N fires...") is the reliable signal here instead.
+    page.wait_for_function(
+        "document.querySelector('.map-note') && "
+        "!document.querySelector('.map-note').innerText.includes('Showing 24 fires')",
+        timeout=15000)
+    text = page.locator(".map-note").inner_text()
+    assert "Showing 24 fires" not in text                      # narrower than "show everything"
+
+
 def test_clicking_a_fire_shows_its_details(new_page, server):
     page, _ = open_page(new_page, server)
+    clear_filters(page)                       # the default view can hide Out of Control fires
     markers = page.locator("path.leaflet-interactive")
     for i in range(markers.count()):
         if (markers.nth(i).get_attribute("fill") or "").lower() == "#eb6834":
@@ -149,7 +194,9 @@ def test_clicking_a_fire_shows_its_details(new_page, server):
 
 def test_filters_change_the_fire_list(new_page, server):
     page, _ = open_page(new_page, server)
-    assert "of 24" in page.get_by_text("Viewing rows").first.inner_text()
+    clear_filters(page)
+    page.wait_for_selector(".shiny-data-grid-summary", timeout=15000)
+    page.wait_for_function("document.body.innerText.includes('of 24')", timeout=15000)
     page.get_by_label("Include fires declared out").check()
     page.wait_for_function("document.body.innerText.includes('of 40')", timeout=15000)
 
