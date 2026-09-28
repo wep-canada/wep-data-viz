@@ -5,10 +5,10 @@ old it may get before the dashboard flags it as stale. The pipeline, the app and
 the "Data & sources" page all read from this registry, so adding a source is one
 entry here.
 
-STATUS OF THESE ENDPOINTS: the URLs, layer names and field names below were taken
-from the providers' public documentation and sample responses. They have NOT yet
-been run from this repo against the live servers. Run ``python -m pipeline.run``
-once and check ``docs/sources.md`` before relying on them.
+These endpoints have been run against the live servers (see ``docs/sources.md``
+and the ``daily-refresh`` GitHub Action's run history) and are confirmed working.
+If you add or change a source, re-run ``python -m pipeline.run`` once and update
+``docs/sources.md`` before relying on it.
 """
 
 from __future__ import annotations
