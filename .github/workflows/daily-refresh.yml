@@ -1,0 +1,54 @@
+name: daily refresh
+
+# Saves a snapshot of every live feed, updates freshness.json, and appends today's row to the
+# history. If the commit changes the branch Posit Connect Cloud deploys from, it redeploys.
+
+on:
+  schedule:
+    - cron: "17 13 * * *"      # 13:17 UTC every day (06:17 Pacific in summer)
+  workflow_dispatch:            # "Run workflow" button, for a manual refresh
+
+permissions:
+  contents: write
+
+concurrency:
+  group: data-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - run: pip install -r requirements.txt
+
+      - name: Refresh data
+        id: refresh
+        working-directory: src
+        env:
+          WEPDASH_CONTACT: ${{ github.server_url }}/${{ github.repository }}
+        run: python -m pipeline.run
+        continue-on-error: true       # still commit whatever did succeed
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          if git diff --cached --quiet; then
+            echo "No data changes."
+          else
+            git commit -m "data: refresh $(date -u +%F)"
+            git push
+          fi
+
+      - name: Fail the run if any source failed (so you get an email)
+        if: steps.refresh.outcome == 'failure'
+        run: |
+          echo "One or more sources failed. See the 'Refresh data' step and data/freshness.json."
+          exit 1
