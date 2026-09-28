@@ -27,7 +27,7 @@ loudly so you get an email.
 python -m venv .venv && source .venv/bin/activate     # Windows: .venv\Scripts\activate
 pip install -r requirements-dev.txt
 
-# 1. Fetch real data once and check it (see docs/sources.md, "Things to check on the first real run")
+# 1. Fetch real data (confirmed working against the real government servers; see docs/sources.md)
 cd src && python -m pipeline.run && cd ..
 
 # 2. Run the app
@@ -48,9 +48,10 @@ can see the key in the tile URLs, so restrict it to your website addresses in CA
 CARTO has said the raster tiles it serves are being phased out, so expect to switch this map to vector
 tiles or another provider eventually.
 
-**Important:** the live endpoints were written from the providers' documentation and sample
-responses and have not yet been run from this repo against the real servers. Step 1 above is the
-first thing to do, and `docs/sources.md` lists what to look for.
+The live endpoints have been confirmed working against the real government servers (the
+`daily-refresh` GitHub Action runs green - see its run history). `docs/sources.md` has the full
+catalogue, including one gotcha worth knowing before you touch fire centres: see "Maintaining fire
+centre codes" below.
 
 ## Repository layout
 
@@ -67,12 +68,13 @@ wep-data-viz/
 │   ├── curated/           indicators.csv, data_gaps.csv, fire_centre_codes.csv (edited by hand)
 │   ├── watch/             page fingerprints for the weekly check
 │   └── freshness.json     when each source last succeeded (written by the pipeline)
-├── docs/sources.md        source catalogue: endpoints, fields, licences, what is untested
+├── docs/sources.md        source catalogue: endpoints, fields, licences, confirmed/untested status
 ├── notebooks/             exploration
 ├── src/
 │   ├── app.py             entry point: assembles the dashboards into one app
 │   ├── core/              shared: config, http, freshness, frames (GeoJSON to tables), theme
-│   ├── pipeline/          sources.py (registry), fetchers.py, run.py, history.py, watch.py
+│   ├── pipeline/          sources.py (registry), fetchers.py, run.py, history.py, watch.py,
+│   │                      verify_fire_centre_codes.py
 │   ├── dashboards/
 │   │   ├── sources.py     "Data and sources" page (shared by every dashboard)
 │   │   └── wildfire/      data.py, filters.py, kpis.py, charts.py, mapview.py, page.py
@@ -89,11 +91,14 @@ LLM key behind it invites cost and abuse; add one later only with rate limits.
 
 1. Push this repo to GitHub (public keeps GitHub Actions free).
 2. In Connect Cloud, publish from the GitHub repo: pick the branch, set the primary file to
-   `src/app.py`, and let it install `requirements.txt`. Check Connect Cloud's current docs for the
-   exact wording, since I have not deployed this yet.
-3. The daily job's commit to that branch should trigger a redeploy. Confirm this after the first run.
-4. Add a `LICENSE` before making the repo public (MIT is typical for code). The data stays under the
-   providers' open government licences; the app's Data and sources page carries the attribution.
+   `src/app.py`, and let it install `requirements.txt`. This is deployed and working.
+3. Turn on "Automatically publish on push" so the daily job's commit to that branch triggers a
+   redeploy - confirmed working.
+4. Set `WEPDASH_CARTO_KEY` as a Connect Cloud environment variable (see "Base map key" above) and
+   restrict the key to the app's production domain in CARTO's key settings - done for the current
+   deployment.
+5. `LICENSE` (MIT) is already in the repo. The data stays under the providers' open government
+   licences; the app's Data and sources page carries the attribution.
 
 ## Adding another dashboard
 
@@ -103,6 +108,18 @@ LLM key behind it invites cost and abuse; add one later only with rate limits.
 4. Add `tests/` files that mirror the new modules.
 
 Connect Cloud's free plan allows 5 apps; one app with several dashboards uses just one slot.
+
+## Maintaining fire centre codes
+
+`data/curated/fire_centre_codes.csv` maps the `FIRE_CENTRE` codes (2-7) used by the live fire-points
+feed to real fire-centre names. There is no reliable API for this: BC also publishes a fire-centre
+*boundaries* layer with names, but it uses a completely different numbering (`MOF_FIRE_CENTRE_ID`,
+141-146) for the same six fire centres, so querying it silently produces a mapping that never
+matches the live data - this happened once already (see `CHANGELOG.md`). The current six rows were
+hand-verified by geo-locating each code's fires against BC Wildfire Service's published fire-centre
+boundary descriptions (full writeup in `docs/sources.md`). Run
+`python -m pipeline.verify_fire_centre_codes` after a fresh `pipeline.run` to sanity-check the mapping
+still holds; it flags any code that shows up in new data with no curated name.
 
 ## Maintaining the curated indicators
 
@@ -117,8 +134,6 @@ cultural fire). Those rows carry a note and are deliberately not charted.
 
 ## Known limitations
 
-- **Live endpoints unverified.** See above.
-- **Fire centres show as codes** until `fire_centre_codes.csv` is filled.
 - **Map tiles need internet.** They come from CARTO; if blocked the map shows fires on a blank background.
 - **The map redraws when a filter changes**, so it resets to the province view. Updating layers in place is a later improvement.
 - **Console message.** Switching tabs while a chart is still starting can log `[anywidget] Failed to initialize model` in the browser console. It has no visible effect; the browser tests ignore it.
