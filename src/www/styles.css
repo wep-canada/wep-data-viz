@@ -74,7 +74,7 @@ body {
   color: #0b0b0b;
 }
 .pill .pill-icon { margin-right: 0; }
-.st-fresh { background: var(--wd-good); }
+.st-fresh { background: var(--wd-good); color: #ffffff; }
 .st-degraded, .st-stale { background: var(--wd-warning); }
 .st-missing { background: var(--wd-critical); color: #ffffff; }
 
