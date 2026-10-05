@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-10-04T18:22:19Z",
+  "generated_at": "2026-10-05T13:34:28Z",
   "sources": {
     "bc_evac_orders": {
       "expected_max_age_hours": 36.0,
       "label": "BC evacuation orders and alerts",
-      "last_attempt": "2026-10-04T18:22:19Z",
-      "last_success": "2026-10-04T18:22:19Z",
+      "last_attempt": "2026-10-05T13:34:28Z",
+      "last_success": "2026-10-05T13:34:28Z",
       "licence": "Open Government Licence – British Columbia",
       "rows": 16,
       "source_updated_at": null,
@@ -14,8 +14,8 @@
     "bc_fire_perimeters": {
       "expected_max_age_hours": 36.0,
       "label": "BC current fire perimeters",
-      "last_attempt": "2026-10-04T18:22:19Z",
-      "last_success": "2026-10-04T18:22:19Z",
+      "last_attempt": "2026-10-05T13:34:28Z",
+      "last_success": "2026-10-05T13:34:28Z",
       "licence": "Open Government Licence – British Columbia",
       "rows": 312,
       "source_updated_at": null,
@@ -24,20 +24,20 @@
     "bc_fire_points": {
       "expected_max_age_hours": 36.0,
       "label": "BC current fire locations",
-      "last_attempt": "2026-10-04T18:22:19Z",
-      "last_success": "2026-10-04T18:22:19Z",
+      "last_attempt": "2026-10-05T13:34:28Z",
+      "last_success": "2026-10-05T13:34:28Z",
       "licence": "Open Government Licence – British Columbia",
-      "rows": 1441,
+      "rows": 1444,
       "source_updated_at": null,
       "url": "https://www2.gov.bc.ca/gov/content/safety/wildfire-status/about-bcws/wildfire-statistics"
     },
     "cwfis_hotspots": {
       "expected_max_age_hours": 36.0,
       "label": "Satellite hotspots, last 24 h (BC)",
-      "last_attempt": "2026-10-04T18:22:19Z",
-      "last_success": "2026-10-04T18:22:19Z",
+      "last_attempt": "2026-10-05T13:34:28Z",
+      "last_success": "2026-10-05T13:34:28Z",
       "licence": "Open Government Licence – Canada",
-      "rows": 94,
+      "rows": 81,
       "source_updated_at": null,
       "url": "https://cwfis.cfs.nrcan.gc.ca/datamart"
     }
