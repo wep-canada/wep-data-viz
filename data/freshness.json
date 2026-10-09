@@ -1,21 +1,21 @@
 {
-  "generated_at": "2026-10-08T13:33:13Z",
+  "generated_at": "2026-10-09T13:32:29Z",
   "sources": {
     "bc_evac_orders": {
       "expected_max_age_hours": 36.0,
       "label": "BC evacuation orders and alerts",
-      "last_attempt": "2026-10-08T13:33:13Z",
-      "last_success": "2026-10-08T13:33:13Z",
+      "last_attempt": "2026-10-09T13:32:29Z",
+      "last_success": "2026-10-09T13:32:29Z",
       "licence": "Open Government Licence – British Columbia",
-      "rows": 14,
+      "rows": 11,
       "source_updated_at": null,
       "url": "https://open.canada.ca/data/en/dataset/7efd46d0-b5d3-4dff-af80-d376c42aec33"
     },
     "bc_fire_perimeters": {
       "expected_max_age_hours": 36.0,
       "label": "BC current fire perimeters",
-      "last_attempt": "2026-10-08T13:33:13Z",
-      "last_success": "2026-10-08T13:33:13Z",
+      "last_attempt": "2026-10-09T13:32:29Z",
+      "last_success": "2026-10-09T13:32:29Z",
       "licence": "Open Government Licence – British Columbia",
       "rows": 312,
       "source_updated_at": null,
@@ -24,20 +24,20 @@
     "bc_fire_points": {
       "expected_max_age_hours": 36.0,
       "label": "BC current fire locations",
-      "last_attempt": "2026-10-08T13:33:13Z",
-      "last_success": "2026-10-08T13:33:13Z",
+      "last_attempt": "2026-10-09T13:32:29Z",
+      "last_success": "2026-10-09T13:32:29Z",
       "licence": "Open Government Licence – British Columbia",
-      "rows": 1445,
+      "rows": 1446,
       "source_updated_at": null,
       "url": "https://www2.gov.bc.ca/gov/content/safety/wildfire-status/about-bcws/wildfire-statistics"
     },
     "cwfis_hotspots": {
       "expected_max_age_hours": 36.0,
       "label": "Satellite hotspots, last 24 h (BC)",
-      "last_attempt": "2026-10-08T13:33:13Z",
-      "last_success": "2026-10-08T13:33:13Z",
+      "last_attempt": "2026-10-09T13:32:29Z",
+      "last_success": "2026-10-09T13:32:29Z",
       "licence": "Open Government Licence – Canada",
-      "rows": 150,
+      "rows": 74,
       "source_updated_at": null,
       "url": "https://cwfis.cfs.nrcan.gc.ca/datamart"
     }
