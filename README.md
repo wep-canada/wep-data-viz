@@ -77,6 +77,7 @@ wep-data-viz/
 │   │                      verify_fire_centre_codes.py
 │   ├── dashboards/
 │   │   ├── sources.py     "Data and sources" page (shared by every dashboard)
+│   │   ├── assistant.py   floating "Ask a question" widget (shared by every dashboard)
 │   │   └── wildfire/      data.py, filters.py, kpis.py, charts.py, mapview.py, page.py
 │   └── www/styles.css
 ├── tests/                 mirrors src/, plus e2e/ (browser) and fixtures/ (synthetic data)
@@ -84,8 +85,9 @@ wep-data-viz/
 └── requirements-dev.txt   adds pytest and playwright
 ```
 
-`ai_tab.py` and `prompts/` from the reference repo are left out on purpose. A public app with an
-LLM key behind it invites cost and abuse; add one later only with rate limits.
+`src/dashboards/assistant.py` is a floating "Ask a question" widget, not a full `ai_tab.py` page
+from the reference repo - see "AI assistant" below for why, and how it avoids the cost-and-abuse
+problem that made it worth leaving out originally.
 
 ## Deploying to Posit Connect Cloud
 
@@ -108,6 +110,31 @@ LLM key behind it invites cost and abuse; add one later only with rate limits.
 4. Add `tests/` files that mirror the new modules.
 
 Connect Cloud's free plan allows 5 apps; one app with several dashboards uses just one slot.
+
+## AI assistant
+
+A floating "Ask a question" widget (bottom-right, every tab) lets visitors ask about what the
+dashboard shows - current fire numbers, equity/governance indicators, documented data gaps, and
+where the data comes from. It is grounded, not general-purpose: `dashboards/assistant.py` builds a
+plain-text snapshot of that same data (`build_context()`) and the system prompt tells the model to
+answer only from it and say so when something isn't covered, rather than use its own (possibly
+stale) knowledge of a specific fire or evacuation order.
+
+It's off by default and costs nothing to leave off. To turn it on:
+
+1. Sign up at <https://console.groq.com> and create a free API key (no credit card).
+2. Set it as `GROQ_API_KEY` - in `.env` locally, and as a real environment variable/secret in
+   Posit Connect Cloud for the deployed app (never commit a real key to git).
+3. Redeploy. With no key set, the button still shows but says the assistant isn't configured yet;
+   nothing else about the dashboard is affected.
+
+It uses [chatlas](https://posit-dev.github.io/chatlas/) against Groq's free tier (model set by
+`WEPDASH_ASSISTANT_MODEL`, default `llama-3.3-70b-versatile`). Two things worth knowing about that
+free tier: the rate limit (around 30 requests/minute, 1,000/day at the time of writing) is shared
+across every visitor to the app, not per-person, since there's one key for the whole deployment -
+fine for a small nonprofit site, but it can run dry under a traffic spike; and errors (rate limit,
+network, auth) are shown to the visitor as a plain "something went wrong" message
+(`on_error="sanitize"`) rather than crashing their session or leaking internals.
 
 ## Maintaining fire centre codes
 
@@ -139,3 +166,6 @@ cultural fire). Those rows carry a note and are deliberately not charted.
 - **Repository size.** Daily snapshots of the perimeter layer add up. If the repo grows past a few hundred MB, move snapshots to GitHub release assets or drop the perimeter snapshot (the live fetch does not need it).
 - **Scheduled workflows can be paused** by GitHub after 60 days without repo activity (from memory; check GitHub's docs). Watch for it in the off-season.
 - **No gender-disaggregated or community-level outcome data.** This is a finding, shown on the Data gaps tab, not something to fill with proxies.
+- **The AI assistant's rate limit is shared across every visitor.** It's one free Groq key for the
+  whole deployment (see "AI assistant" above), so a traffic spike can exhaust it for everyone until
+  the per-minute limit resets; the rest of the dashboard is unaffected.

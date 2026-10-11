@@ -25,7 +25,9 @@ def _load_dotenv(path: Path) -> None:
         if not line or line.startswith("#") or "=" not in line:
             continue
         name, _, value = line.partition("=")
-        os.environ.setdefault(name.strip(), value.strip().strip("'\""))
+        value = value.strip().strip("'\"")
+        if value:  # a blank line like KEY= must not block a real value from another file
+            os.environ.setdefault(name.strip(), value)
 
 
 for _name in (".env", ".env.local"):
@@ -68,3 +70,9 @@ CARTO_KEY = os.environ.get("WEPDASH_CARTO_KEY", "").strip()
 # Identify ourselves politely to the servers we call.
 CONTACT = os.environ.get("WEPDASH_CONTACT", "wep-canada wildfire dashboard")
 USER_AGENT = f"WEP-Canada-Wildfire-Dashboard/0.1 ({CONTACT})"
+
+# The "Ask a question" assistant (dashboards.assistant). Free tier at https://console.groq.com -
+# leave empty to turn the assistant off; the rest of the dashboard is unaffected. Set this as a
+# real secret (GitHub Actions / Posit Connect Cloud environment variable), never in git.
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "").strip()
+ASSISTANT_MODEL = os.environ.get("WEPDASH_ASSISTANT_MODEL", "llama-3.3-70b-versatile")

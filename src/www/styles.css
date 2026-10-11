@@ -131,3 +131,39 @@ body {
 @media (max-width: 640px) {
   .kpi-value { font-size: 1.6rem; }
 }
+
+/* "Ask a question" assistant: a floating widget, placed outside every nav_panel (see
+   app.py) so it stays put across tabs. Pure CSS open/close via a hidden checkbox - no
+   server round trip just to show or hide it. */
+.assistant-toggle-state { position: absolute; opacity: 0; pointer-events: none; }
+.assistant-toggle {
+  position: fixed; right: 1.1rem; bottom: 1.1rem; z-index: 1040;
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  background: var(--wd-orange); color: #ffffff; border-radius: 999px;
+  padding: 0.65rem 1.1rem; font-weight: 600; font-size: 0.9rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25); cursor: pointer;
+}
+.assistant-toggle:hover { filter: brightness(1.08); }
+.assistant-toggle-state:focus-visible + .assistant-toggle { outline: 3px solid var(--wd-accent); outline-offset: 2px; }
+.assistant-panel {
+  display: none; flex-direction: column;
+  position: fixed; right: 1.1rem; bottom: 4.6rem; z-index: 1039;
+  width: min(380px, calc(100vw - 2.2rem)); height: min(560px, calc(100vh - 7rem));
+  background: var(--wd-surface); color: var(--wd-text); border: 1px solid var(--wd-border);
+  border-radius: 12px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3); overflow: hidden;
+}
+.assistant-toggle-state:checked ~ .assistant-panel { display: flex; }
+.assistant-panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.6rem 0.9rem; border-bottom: 1px solid var(--wd-border); flex: none;
+}
+.assistant-panel-title { font-weight: 600; }
+.assistant-close { cursor: pointer; color: var(--wd-text-2); font-size: 0.85rem; }
+.assistant-close:hover { color: var(--wd-text); }
+.assistant-disabled-note { padding: 0.9rem; }
+.assistant-panel shiny-chat-container { flex: 1 1 auto; min-height: 0; }
+
+@media (max-width: 480px) {
+  .assistant-panel { right: 0.6rem; bottom: 4.2rem; }
+  .assistant-toggle { right: 0.6rem; bottom: 0.6rem; }
+}

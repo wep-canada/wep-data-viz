@@ -17,7 +17,7 @@ if str(SRC) not in sys.path:
 from shiny import App, reactive, ui  # noqa: E402
 
 from core import theme  # noqa: E402
-from dashboards import sources  # noqa: E402
+from dashboards import assistant, sources  # noqa: E402
 from dashboards.wildfire import page as wildfire  # noqa: E402
 
 WWW = SRC / "www"
@@ -34,6 +34,8 @@ app_ui = ui.page_navbar(
         ui.head_content(ui.tags.style(theme.css()),
                         ui.tags.meta(name="viewport", content="width=device-width, initial-scale=1")),
         ui.include_css(WWW / "styles.css"),
+        # Outside every nav_panel so it survives switching tabs - see dashboards/assistant.py.
+        assistant.assistant_ui("assistant"),
     ),
     fillable=False,
     window_title="WEP Canada wildfire resilience dashboard",
@@ -44,6 +46,7 @@ def server(input, output, session):
     mode = reactive.calc(lambda: "dark" if input.mode() == "dark" else "light")
     wildfire.wildfire_server("wildfire", mode)
     sources.sources_server("sources")
+    assistant.assistant_server("assistant")
 
 
 app = App(app_ui, server, static_assets=WWW)

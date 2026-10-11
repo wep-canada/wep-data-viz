@@ -35,3 +35,11 @@ runs green in GitHub Actions).
   and no overlay layers. The map is now built once per session and its layers are updated in place
   (`mapview.new_map` / `mapview.update_layers`) - this also means the map no longer resets to the
   province view on every filter change, since the underlying Leaflet map is never recreated.
+
+- Optional AI assistant: a floating "Ask a question" widget (`dashboards/assistant.py`), answering
+  only from the dashboard's own current data and docs (live wildfire numbers, equity/governance
+  indicators, data gaps, source registry) via a system prompt built by `build_context()` - not the
+  model's own general knowledge, which could be stale or wrong for a specific, fast-moving
+  wildfire. Uses chatlas against Groq's free API tier, so there's no cost to run; off by default
+  until a free `GROQ_API_KEY` is set, with no effect on the rest of the dashboard either way (see
+  README's "AI assistant" section).
