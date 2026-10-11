@@ -129,7 +129,9 @@ It's off by default and costs nothing to leave off. To turn it on:
    nothing else about the dashboard is affected.
 
 It uses [chatlas](https://posit-dev.github.io/chatlas/) against Groq's free tier (model set by
-`WEPDASH_ASSISTANT_MODEL`, default `llama-3.3-70b-versatile`). Two things worth knowing about that
+`WEPDASH_ASSISTANT_MODEL`, default `openai/gpt-oss-120b`). Groq retires free-tier models on a
+schedule (see its [deprecations page](https://console.groq.com/docs/deprecations)) - if the
+assistant starts erroring, check there first before anything else. Two things worth knowing about that
 free tier: the rate limit (around 30 requests/minute, 1,000/day at the time of writing) is shared
 across every visitor to the app, not per-person, since there's one key for the whole deployment -
 fine for a small nonprofit site, but it can run dry under a traffic spike; and errors (rate limit,

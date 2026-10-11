@@ -74,5 +74,9 @@ USER_AGENT = f"WEP-Canada-Wildfire-Dashboard/0.1 ({CONTACT})"
 # The "Ask a question" assistant (dashboards.assistant). Free tier at https://console.groq.com -
 # leave empty to turn the assistant off; the rest of the dashboard is unaffected. Set this as a
 # real secret (GitHub Actions / Posit Connect Cloud environment variable), never in git.
+#
+# Groq retires free-tier models on a schedule (see https://console.groq.com/docs/deprecations) -
+# if the assistant starts erroring, that page is the first thing to check; gpt-oss-120b is
+# Groq's own general-purpose replacement as of late 2026.
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "").strip()
-ASSISTANT_MODEL = os.environ.get("WEPDASH_ASSISTANT_MODEL", "llama-3.3-70b-versatile")
+ASSISTANT_MODEL = os.environ.get("WEPDASH_ASSISTANT_MODEL", "openai/gpt-oss-120b")
