@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-10-18T13:37:27Z",
+  "generated_at": "2026-10-19T13:54:10Z",
   "sources": {
     "bc_evac_orders": {
       "expected_max_age_hours": 36.0,
       "label": "BC evacuation orders and alerts",
-      "last_attempt": "2026-10-18T13:37:27Z",
-      "last_success": "2026-10-18T13:37:27Z",
+      "last_attempt": "2026-10-19T13:54:10Z",
+      "last_success": "2026-10-19T13:54:10Z",
       "licence": "Open Government Licence – British Columbia",
       "rows": 11,
       "source_updated_at": null,
@@ -14,9 +14,8 @@
     "bc_fire_perimeters": {
       "expected_max_age_hours": 36.0,
       "label": "BC current fire perimeters",
-      "last_attempt": "2026-10-18T13:37:27Z",
-      "last_error": "FetchError: GET https://openmaps.gov.bc.ca/geo/pub/wfs failed: 400 Client Error: Bad Request for url: https://openmaps.gov.bc.ca/geo/pub/wfs?service=WFS&version=2.0.0&request=GetFeature&typeNames=pub%3AWHSE_LAND_AND_NATURAL_RESOURCE.PROT_CURRENT_FIRE_POLYS_SP&outputFormat=application%2Fjson&srsName=EPSG%3A4326&count=5000&startIndex=0",
-      "last_success": "2026-10-17T13:36:53Z",
+      "last_attempt": "2026-10-19T13:54:10Z",
+      "last_success": "2026-10-19T13:54:10Z",
       "licence": "Open Government Licence – British Columbia",
       "rows": 314,
       "source_updated_at": null,
@@ -25,8 +24,8 @@
     "bc_fire_points": {
       "expected_max_age_hours": 36.0,
       "label": "BC current fire locations",
-      "last_attempt": "2026-10-18T13:37:27Z",
-      "last_success": "2026-10-18T13:37:27Z",
+      "last_attempt": "2026-10-19T13:54:10Z",
+      "last_success": "2026-10-19T13:54:10Z",
       "licence": "Open Government Licence – British Columbia",
       "rows": 1452,
       "source_updated_at": null,
@@ -35,10 +34,10 @@
     "cwfis_hotspots": {
       "expected_max_age_hours": 36.0,
       "label": "Satellite hotspots, last 24 h (BC)",
-      "last_attempt": "2026-10-18T13:37:27Z",
-      "last_success": "2026-10-18T13:37:27Z",
+      "last_attempt": "2026-10-19T13:54:10Z",
+      "last_success": "2026-10-19T13:54:10Z",
       "licence": "Open Government Licence – Canada",
-      "rows": 233,
+      "rows": 108,
       "source_updated_at": null,
       "url": "https://cwfis.cfs.nrcan.gc.ca/datamart"
     }
