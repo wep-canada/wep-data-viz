@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-10-25T13:38:47Z",
+  "generated_at": "2026-10-26T15:11:49Z",
   "sources": {
     "bc_evac_orders": {
       "expected_max_age_hours": 36.0,
       "label": "BC evacuation orders and alerts",
-      "last_attempt": "2026-10-25T13:38:47Z",
-      "last_success": "2026-10-25T13:38:47Z",
+      "last_attempt": "2026-10-26T15:11:49Z",
+      "last_success": "2026-10-26T15:11:49Z",
       "licence": "Open Government Licence – British Columbia",
       "rows": 11,
       "source_updated_at": null,
@@ -14,27 +14,28 @@
     "bc_fire_perimeters": {
       "expected_max_age_hours": 36.0,
       "label": "BC current fire perimeters",
-      "last_attempt": "2026-10-25T13:38:47Z",
-      "last_success": "2026-10-25T13:38:47Z",
+      "last_attempt": "2026-10-26T15:11:49Z",
+      "last_success": "2026-10-26T15:11:49Z",
       "licence": "Open Government Licence – British Columbia",
-      "rows": 314,
+      "rows": 0,
       "source_updated_at": null,
       "url": "https://open.canada.ca/data/dataset/cdfc2d7b-c046-4bf0-90ac-4897232619e1"
     },
     "bc_fire_points": {
       "expected_max_age_hours": 36.0,
       "label": "BC current fire locations",
-      "last_attempt": "2026-10-25T13:38:47Z",
-      "last_success": "2026-10-25T13:38:47Z",
+      "last_attempt": "2026-10-26T15:11:49Z",
+      "last_success": "2026-10-26T15:11:49Z",
       "licence": "Open Government Licence – British Columbia",
-      "rows": 1462,
+      "rows": 1463,
       "source_updated_at": null,
       "url": "https://www2.gov.bc.ca/gov/content/safety/wildfire-status/about-bcws/wildfire-statistics"
     },
     "cwfis_hotspots": {
       "expected_max_age_hours": 36.0,
       "label": "Satellite hotspots, last 24 h (BC)",
-      "last_attempt": "2026-10-25T13:38:47Z",
+      "last_attempt": "2026-10-26T15:11:49Z",
+      "last_error": "FetchError: GET https://cwfis.cfs.nrcan.gc.ca/geoserver/wfs failed: 503 Server Error: Service Temporarily Unavailable for url: https://cwfis.cfs.nrcan.gc.ca/geoserver/wfs?service=WFS&version=2.0.0&request=GetFeature&typeNames=public%3Ahotspots_last24hrs&outputFormat=application%2Fjson&srsName=EPSG%3A4326&count=5000&startIndex=0",
       "last_success": "2026-10-25T13:38:47Z",
       "licence": "Open Government Licence – Canada",
       "rows": 389,
