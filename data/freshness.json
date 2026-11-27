@@ -1,21 +1,21 @@
 {
-  "generated_at": "2026-11-26T22:19:52Z",
+  "generated_at": "2026-11-27T21:57:10Z",
   "sources": {
     "bc_evac_orders": {
       "expected_max_age_hours": 36.0,
       "label": "BC evacuation orders and alerts",
-      "last_attempt": "2026-11-26T22:19:52Z",
-      "last_success": "2026-11-26T22:19:52Z",
+      "last_attempt": "2026-11-27T21:57:10Z",
+      "last_success": "2026-11-27T21:57:10Z",
       "licence": "Open Government Licence – British Columbia",
-      "rows": 28,
+      "rows": 21,
       "source_updated_at": null,
       "url": "https://open.canada.ca/data/en/dataset/7efd46d0-b5d3-4dff-af80-d376c42aec33"
     },
     "bc_fire_perimeters": {
       "expected_max_age_hours": 36.0,
       "label": "BC current fire perimeters",
-      "last_attempt": "2026-11-26T22:19:52Z",
-      "last_success": "2026-11-26T22:19:52Z",
+      "last_attempt": "2026-11-27T21:57:10Z",
+      "last_success": "2026-11-27T21:57:10Z",
       "licence": "Open Government Licence – British Columbia",
       "rows": 321,
       "source_updated_at": null,
@@ -24,8 +24,8 @@
     "bc_fire_points": {
       "expected_max_age_hours": 36.0,
       "label": "BC current fire locations",
-      "last_attempt": "2026-11-26T22:19:52Z",
-      "last_success": "2026-11-26T22:19:52Z",
+      "last_attempt": "2026-11-27T21:57:10Z",
+      "last_success": "2026-11-27T21:57:10Z",
       "licence": "Open Government Licence – British Columbia",
       "rows": 1481,
       "source_updated_at": null,
@@ -34,10 +34,10 @@
     "cwfis_hotspots": {
       "expected_max_age_hours": 36.0,
       "label": "Satellite hotspots, last 24 h (BC)",
-      "last_attempt": "2026-11-26T22:19:52Z",
-      "last_success": "2026-11-26T22:19:52Z",
+      "last_attempt": "2026-11-27T21:57:10Z",
+      "last_success": "2026-11-27T21:57:10Z",
       "licence": "Open Government Licence – Canada",
-      "rows": 43,
+      "rows": 59,
       "source_updated_at": null,
       "url": "https://cwfis.cfs.nrcan.gc.ca/datamart"
     }
